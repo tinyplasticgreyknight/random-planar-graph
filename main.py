@@ -42,7 +42,7 @@ def triangulate(nodes):
 			edges.add((edge[0], edge[1]))
 	return list(edges)
 
-def kruskal(num_nodes, edges):
+def spanning_tree(num_nodes, edges):
 	"""Given a list of edges, calculate a minimal spanning tree out of them."""
 	tree = []
 	partitions = DisjointSet()
@@ -81,15 +81,14 @@ def node_id_char(i):
 
 def node_id(i):
 	ident = ""
+	i += 1
 	while i > 0:
-		ident += node_id_char(i % 26)
-		i = int(i/26)
-	if ident == "":
-		ident = "A"
+		c = (i-1) % 26
+		ident = node_id_char(c) + ident
+		i = int((i-c)/26)
 	return ident
 
 def write_graph(nodes, edges, width, height, size, filename):
-	PIXELS = 1.0/72
 	with open(filename, 'w') as f:
 		f.write("graph {\n")
 		for i in range(len(nodes)):
@@ -113,10 +112,10 @@ def main(filename, width=320, height=240, num_nodes=10, num_edges=15, exclusion_
 	exclusion_radius = int(exclusion_radius)
 
 	nodes = generate_nodes(num_nodes, width, height, exclusion_radius)
-	tedges = triangulate(nodes)
-	kedges = kruskal(len(nodes), tedges)
-	xedges = extend_edges(kedges, num_edges, tedges)
-	edges = xedges
+	tri_edges = triangulate(nodes)
+	span_edges = spanning_tree(len(nodes), tri_edges)
+	ext_edges = extend_edges(span_edges, num_edges, tri_edges, )
+	edges = ext_edges
 
 	write_graph(nodes, edges, width, height, 35, filename)
 
