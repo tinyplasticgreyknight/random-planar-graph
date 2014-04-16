@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from pyhull.delaunay import DelaunayTri
 from graphviz.dot import Graph
 import random
@@ -156,20 +158,7 @@ def write_graph(nodes, edges, width, height, seed, filename):
 		f.write("}\n")
 
 
-def main(filename, width=320, height=240, num_nodes=10, num_edges=None, exclusion_radius=40, double_chance=0.1, hair_adjustment=0.0, seed=None):
-	if seed is None:
-		seed = time.time()
-	seed = int(seed)
-	width = int(width)
-	height = int(height)
-	num_nodes = int(num_nodes)
-	if num_edges is None:
-		num_edges = num_nodes * 1.25
-	num_edges = int(num_edges)
-	exclusion_radius = int(exclusion_radius)
-	double_chance = float(double_chance)
-	hair_adjustment = float(hair_adjustment)
-
+def main(filename, width, height, num_nodes, num_edges, exclusion_radius, double_chance, hair_adjustment, seed):
 	random.seed(seed)
 	nodes = generate_nodes(num_nodes, width, height, exclusion_radius)
 	tri_edges = triangulate(nodes)
@@ -185,5 +174,34 @@ def main(filename, width=320, height=240, num_nodes=10, num_edges=None, exclusio
 	write_graph(nodes, edges, width, height, seed, filename)
 
 if __name__=='__main__':
-	import sys
-	main(*(sys.argv[1:]))
+	import argparse
+	defaults = {
+		"width": 320,
+		"height": 240,
+		"nodes": 10,
+		"edges": None,
+		"radius": 40,
+		"double": 0.1,
+		"hair": 0.0,
+		"seed": None,
+	}
+	parser = argparse.ArgumentParser(description="Create random planar graphs, suitable as input to graphviz neato.  Try neato with the -n1 argument to use the node coordinates specified by this script.")
+	parser.add_argument("--width", type=int, required=False, help="Width of the field on which to place points.  neato might choose a different width for the output image.")
+	parser.add_argument("--height", type=int, required=False, help="Height of the field on which to place points.  As above, neato might choose a different size.")
+	parser.add_argument("--nodes", type=int, required=False, help="Number of nodes to place.")
+	parser.add_argument("--edges", type=int, required=False, help="Number of edges to use for connections.  Double edges aren't counted.")
+	parser.add_argument("--radius", type=int, required=False, help="Nodes will not be placed within this distance of each other.")
+	parser.add_argument("--double", type=float, required=False, help="Probability of an edge being doubled.  Ranges from 0.00 to 1.00.  Default %.2f." % defaults["double"])
+	parser.add_argument("--hair", type=float, required=False, help="Adjustment factor to favour dead-end nodes.  Ranges from 0.00 (least hairy) to 1.00 (most hairy).  Some dead-ends may exist even with a low hair factor.  Default %.2f." % defaults["hair"])
+	parser.add_argument("--seed", type=int, required=False, help="Seed for the random number generator.")
+	parser.add_argument("filename", type=str, help="The graphviz output will be written to this file.")
+	parser.set_defaults(**defaults)
+	options = parser.parse_args()
+
+	seed = options.seed
+	if seed is None:
+		seed = int(time.time())
+	num_edges = options.edges
+	if num_edges is None:
+		num_edges = int(options.nodes * 1.25)
+	main(options.filename, options.width, options.height, options.nodes, num_edges, options.radius, options.double, options.hair, seed)
