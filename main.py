@@ -185,15 +185,18 @@ if __name__=='__main__':
 		"hair": 0.0,
 		"seed": None,
 	}
-	parser = argparse.ArgumentParser(description="Create random planar graphs, suitable as input to graphviz neato.  Try neato with the -n1 argument to use the node coordinates specified by this script.")
+	parser = argparse.ArgumentParser(
+		description="Create random planar graphs, suitable as input to graphviz neato.",
+		epilog="Note that sometimes neato decides to pick a nonplanar embedding.  Try giving neato the -n1 argument to use the node coordinates specified by this script, which are always planar but might not look as pretty."
+	)
 	parser.add_argument("--width", type=int, required=False, help="Width of the field on which to place points.  neato might choose a different width for the output image.")
 	parser.add_argument("--height", type=int, required=False, help="Height of the field on which to place points.  As above, neato might choose a different size.")
 	parser.add_argument("--nodes", type=int, required=False, help="Number of nodes to place.")
 	parser.add_argument("--edges", type=int, required=False, help="Number of edges to use for connections.  Double edges aren't counted.")
-	parser.add_argument("--radius", type=int, required=False, help="Nodes will not be placed within this distance of each other.")
+	parser.add_argument("--radius", type=int, required=False, help="Nodes will not be placed within this distance of each other.  Default %d." % defaults["radius"])
 	parser.add_argument("--double", type=float, required=False, help="Probability of an edge being doubled.  Ranges from 0.00 to 1.00.  Default %.2f." % defaults["double"])
 	parser.add_argument("--hair", type=float, required=False, help="Adjustment factor to favour dead-end nodes.  Ranges from 0.00 (least hairy) to 1.00 (most hairy).  Some dead-ends may exist even with a low hair factor.  Default %.2f." % defaults["hair"])
-	parser.add_argument("--seed", type=int, required=False, help="Seed for the random number generator.")
+	parser.add_argument("--seed", type=int, required=False, help="Seed for the random number generator.  You can check the output file to see what seed was used.")
 	parser.add_argument("filename", type=str, help="The graphviz output will be written to this file.")
 	parser.set_defaults(**defaults)
 	options = parser.parse_args()
