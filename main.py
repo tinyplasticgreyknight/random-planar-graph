@@ -1,6 +1,7 @@
 from pyhull.delaunay import DelaunayTri
 from graphviz.dot import Graph
 import random
+import time
 from DisjointSet import DisjointSet
 
 def generate_node(width, height):
@@ -62,9 +63,13 @@ def spanning_tree(num_nodes, edges):
 
 def identify_leaf_nodes(edges):
 	degree = {}
+	def increment(k):
+		if k not in degree:
+			degree[k] = 0
+		degree[k] += 1
 	for edge in edges:
-		degree[edges[0]] += 1
-		degree[edges[1]] += 1
+		increment(edge[0])
+		increment(edge[1])
 	leaves = set()
 	for k in degree:
 		if degree[k]==1:
@@ -93,9 +98,6 @@ def extend_edges(starting_edges, target_size, selections, hair_adjustment):
 	Extra items are drawn from selections.
 	hair_adjustment is the probability that leaf nodes will be left as they are
 	"""
-	if len(starting_edges) + len(selections) < target_size:
-		raise ValueError("not enough unique items in selections")
-
 	selections = set(selections)
 	for edge in starting_edges:
 		selections.discard(edge)
@@ -106,6 +108,14 @@ def extend_edges(starting_edges, target_size, selections, hair_adjustment):
 	good_hair_edges = good_hair_edges
 	bad_hair_edges = bad_hair_edges
 	
+	if hair_adjustment >= 1.0:
+		# in this case we may as well only pick from good hair in the first place
+		selections = good_hair_edges
+		bad_hair_edges = set()
+
+	if len(starting_edges) + len(selections) < target_size:
+		raise ValueError("not enough unique items in selections")
+
 	extended = set(starting_edges)
 	while len(extended) < target_size:
 		edge = choice(selections)
@@ -130,8 +140,9 @@ def node_id(i):
 		i = int((i-c)/26)
 	return ident
 
-def write_graph(nodes, edges, width, height, size, filename):
+def write_graph(nodes, edges, width, height, seed, filename):
 	with open(filename, 'w') as f:
+		f.write("// random seed %d\n" % seed)
 		f.write("graph {\n")
 		for i in range(len(nodes)):
 			node = nodes[i]
@@ -145,8 +156,10 @@ def write_graph(nodes, edges, width, height, size, filename):
 		f.write("}\n")
 
 
-
-def main(filename, width=320, height=240, num_nodes=10, num_edges=15, exclusion_radius=32, hair_adjustment=0.0):
+def main(filename, width=320, height=240, num_nodes=10, num_edges=15, exclusion_radius=32, hair_adjustment=0.0, seed=None):
+	if seed is None:
+		seed = time.time()
+	seed = int(seed)
 	width = int(width)
 	height = int(height)
 	num_nodes = int(num_nodes)
@@ -154,13 +167,15 @@ def main(filename, width=320, height=240, num_nodes=10, num_edges=15, exclusion_
 	exclusion_radius = int(exclusion_radius)
 	hair_adjustment = float(hair_adjustment)
 
+	random.seed(seed)
 	nodes = generate_nodes(num_nodes, width, height, exclusion_radius)
 	tri_edges = triangulate(nodes)
 	span_edges = spanning_tree(len(nodes), tri_edges)
 	ext_edges = extend_edges(span_edges, num_edges, tri_edges, hair_adjustment)
 	edges = ext_edges
 
-	write_graph(nodes, edges, width, height, 35, filename)
+	write_graph(nodes, span_edges, width, height, seed, "span.gv")
+	write_graph(nodes, edges, width, height, seed, filename)
 
 if __name__=='__main__':
 	import sys
