@@ -156,7 +156,7 @@ def write_graph(nodes, edges, width, height, seed, filename):
 		f.write("}\n")
 
 
-def main(filename, width=320, height=240, num_nodes=10, num_edges=15, exclusion_radius=32, hair_adjustment=0.0, seed=None):
+def main(filename, width=320, height=240, num_nodes=10, num_edges=15, exclusion_radius=32, double_chance=0.1, hair_adjustment=0.0, seed=None):
 	if seed is None:
 		seed = time.time()
 	seed = int(seed)
@@ -165,6 +165,7 @@ def main(filename, width=320, height=240, num_nodes=10, num_edges=15, exclusion_
 	num_nodes = int(num_nodes)
 	num_edges = int(num_edges)
 	exclusion_radius = int(exclusion_radius)
+	double_chance = float(double_chance)
 	hair_adjustment = float(hair_adjustment)
 
 	random.seed(seed)
@@ -172,7 +173,11 @@ def main(filename, width=320, height=240, num_nodes=10, num_edges=15, exclusion_
 	tri_edges = triangulate(nodes)
 	span_edges = spanning_tree(len(nodes), tri_edges)
 	ext_edges = extend_edges(span_edges, num_edges, tri_edges, hair_adjustment)
-	edges = ext_edges
+	double_edges = []
+	for edge in ext_edges:
+		if chance(double_chance):
+			double_edges.append(edge)
+	edges = ext_edges + double_edges
 
 	write_graph(nodes, span_edges, width, height, seed, "span.gv")
 	write_graph(nodes, edges, width, height, seed, filename)
