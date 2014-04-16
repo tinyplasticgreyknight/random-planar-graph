@@ -16,7 +16,7 @@ spotless: clean
 	-rm *~
 
 $(GRAPHDESC):
-	python main.py $(GRAPHDESC) 640 480 26 32 40 0.99 0.1 42
+	python main.py $(GRAPHDESC) 640 480 26 32 40 0.1 0.2
 
 $(SPANDESC): $(GRAPHDESC)
 

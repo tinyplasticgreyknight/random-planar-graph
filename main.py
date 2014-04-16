@@ -156,13 +156,15 @@ def write_graph(nodes, edges, width, height, seed, filename):
 		f.write("}\n")
 
 
-def main(filename, width=320, height=240, num_nodes=10, num_edges=15, exclusion_radius=32, double_chance=0.1, hair_adjustment=0.0, seed=None):
+def main(filename, width=320, height=240, num_nodes=10, num_edges=None, exclusion_radius=40, double_chance=0.1, hair_adjustment=0.0, seed=None):
 	if seed is None:
 		seed = time.time()
 	seed = int(seed)
 	width = int(width)
 	height = int(height)
 	num_nodes = int(num_nodes)
+	if num_edges is None:
+		num_edges = num_nodes * 1.25
 	num_edges = int(num_edges)
 	exclusion_radius = int(exclusion_radius)
 	double_chance = float(double_chance)
