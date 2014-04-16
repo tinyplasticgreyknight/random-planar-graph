@@ -60,18 +60,60 @@ def spanning_tree(num_nodes, edges):
 			break
 	return tree
 
-def extend_edges(starting_edges, target_size, selection_set):
-	"""Returns a version of starting_edges with target_size unique elements.  Extra items are drawn from selection_set."""
-	selections = set(selection_set)
+def identify_leaf_nodes(edges):
+	degree = {}
+	for edge in edges:
+		degree[edges[0]] += 1
+		degree[edges[1]] += 1
+	leaves = set()
+	for k in degree:
+		if degree[k]==1:
+			leaves.add(k)
+	return leaves
+
+def partition_edges_by_nodes(nodes, edges):
+	adjacent = set() # edges which have one of those nodes
+	distant = set() # the remaining edges
+	for edge in edges:
+		if (edge[0] in nodes) or (edge[1] in nodes):
+			adjacent.add(edge)
+		else:
+			distant.add(edge)
+	return (adjacent, distant)
+
+def choice(fromset):
+	return random.choice(list(fromset))
+
+def chance(probability):
+	return (random.random() < probability)
+
+def extend_edges(starting_edges, target_size, selections, hair_adjustment):
+	"""
+	Returns a version of starting_edges with target_size unique elements.
+	Extra items are drawn from selections.
+	hair_adjustment is the probability that leaf nodes will be left as they are
+	"""
+	if len(starting_edges) + len(selections) < target_size:
+		raise ValueError("not enough unique items in selections")
+
+	selections = set(selections)
 	for edge in starting_edges:
 		selections.discard(edge)
-	if len(starting_edges) + len(selection_set) < target_size:
-		raise ValueError("not enough unique items in selection_set")
+	leaf_nodes = identify_leaf_nodes(starting_edges)
+	# good hair: edges which don't reduce the number of leaf nodes
+	# bad hair: edges which may reduce the number of leaf nodes
+	bad_hair_edges, good_hair_edges = partition_edges_by_nodes(leaf_nodes, selections)
+	good_hair_edges = good_hair_edges
+	bad_hair_edges = bad_hair_edges
+	
 	extended = set(starting_edges)
-	selections = list(selections)
 	while len(extended) < target_size:
-		edge_i = random.choice(range(len(selections)))
-		edge = selections.pop(edge_i)
+		edge = choice(selections)
+		if (edge in bad_hair_edges) and chance(hair_adjustment):
+			edge = choice(good_hair_edges)
+			good_hair_edges.discard(edge)
+		else:
+			selections.discard(edge)
 		extended.add(edge)
 	return list(extended)
 
@@ -104,17 +146,18 @@ def write_graph(nodes, edges, width, height, size, filename):
 
 
 
-def main(filename, width=320, height=240, num_nodes=10, num_edges=15, exclusion_radius=32):
+def main(filename, width=320, height=240, num_nodes=10, num_edges=15, exclusion_radius=32, hair_adjustment=0.0):
 	width = int(width)
 	height = int(height)
 	num_nodes = int(num_nodes)
 	num_edges = int(num_edges)
 	exclusion_radius = int(exclusion_radius)
+	hair_adjustment = float(hair_adjustment)
 
 	nodes = generate_nodes(num_nodes, width, height, exclusion_radius)
 	tri_edges = triangulate(nodes)
 	span_edges = spanning_tree(len(nodes), tri_edges)
-	ext_edges = extend_edges(span_edges, num_edges, tri_edges, )
+	ext_edges = extend_edges(span_edges, num_edges, tri_edges, hair_adjustment)
 	edges = ext_edges
 
 	write_graph(nodes, edges, width, height, 35, filename)
