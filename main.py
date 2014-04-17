@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from pyhull.delaunay import DelaunayTri
-from graphviz.dot import Graph
 import random
 import time
 from DisjointSet import DisjointSet
