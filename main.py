@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import random
-import time
 from DisjointSet import *
 import triangulation
 
@@ -174,6 +173,7 @@ def main(filename, width, height, num_nodes, num_edges, exclusion_radius, double
 
 if __name__=='__main__':
 	import argparse
+	import time, os
 	defaults = {
 		"width": 320,
 		"height": 240,
@@ -182,7 +182,7 @@ if __name__=='__main__':
 		"radius": 40,
 		"double": 0.1,
 		"hair": 0.0,
-		"seed": None,
+		"seed": int(time.time()) | os.getpid(),
 	}
 	parser = argparse.ArgumentParser(
 		description="Create random planar graphs, suitable as input to graphviz neato.",
@@ -200,10 +200,8 @@ if __name__=='__main__':
 	parser.set_defaults(**defaults)
 	options = parser.parse_args()
 
-	seed = options.seed
-	if seed is None:
-		seed = int(time.time())
 	num_edges = options.edges
 	if num_edges is None:
 		num_edges = int(options.nodes * 1.25)
-	main(options.filename, options.width, options.height, options.nodes, num_edges, options.radius, options.double, options.hair, seed)
+	num_edges = max(num_edges, options.nodes-1) # necessary to avoid a disjoint graph
+	main(options.filename, options.width, options.height, options.nodes, num_edges, options.radius, options.double, options.hair, options.seed)
