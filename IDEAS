@@ -1,0 +1,6 @@
+Ideas for refinements:
+
+* pyhull is temperamental on windows, centos, and cygwin-64.  Perhaps triangulation.py should just implement Delaunay itself....
+* Perhaps spanning_tree() should weight the edges by considering their length.  This might help avoid some of the ugliness caused by big long edges going off into the middle of nowhere.  Currently spanning_tree() just uses Kruskal's algorithm, so this would be pretty easy to do
+* likewise, it would be good if the triangulation took especial pains to avoid long skinny triangles: Ruppert's algorithm would be useful here.
+* the --hair option can only produce as many leaf nodes as were in the original spanning tree.  It would therefore be good if the tree was extra-hairy.

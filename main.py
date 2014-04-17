@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from pyhull.delaunay import DelaunayTri
 import random
 import time
-from DisjointSet import DisjointSet
+from DisjointSet import *
+import triangulation
 
 def generate_node(width, height):
 	return [random.randint(0, width-1), random.randint(0, height-1)]
@@ -37,7 +37,7 @@ def triangle_edges(tri):
 
 def triangulate(nodes):
 	"""Return the list of edges which achieves a Delaunay triangulation of the specified nodes."""
-	triangles = DelaunayTri(nodes)
+	triangles = triangulation.triangulate(nodes)
 	edges = set()
 	for tri in triangles.vertices:
 		for edge in triangle_edges(tri):
