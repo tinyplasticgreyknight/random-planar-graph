@@ -2,7 +2,7 @@ from DisjointSet import *
 import triangulation
 
 def generate_node(width, height, randstream):
-	return [randstream.randint(0, width-1), randstream.randint(0, height-1)]
+	return (randstream.randint(0, width-1), randstream.randint(0, height-1))
 
 def distance2(node0, node1):
 	dx = node1[0] - node0[0]

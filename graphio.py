@@ -11,15 +11,53 @@ def node_id(i):
 		i = int((i-c)/26)
 	return ident
 
+ESCAPES = {'\\':'\\', '\n':'n', '\t':'t', '\r':'r', '"':'"', "'":"'", }
+def escape(string):
+	result = '"'
+	for c in string:
+		if c in ESCAPES:
+			result += '\\' + ESCAPES[c]
+		else:
+			result += c
+	return result + '"'
+
+def write_attributes(stream, attribs_dict):
+	if len(attribs_dict)==0:
+		return
+	stream.write(" [")
+	first = True
+	for key in attribs_dict:
+		if not first:
+			stream.write(", ")
+		first = False
+		value = attribs_dict[key]
+		stream.write("%s=" % str(key))
+		stream.write(escape(str(value)))
+	stream.write("]")
+
 def write_edge(stream, edge, index):
+	attribs = {}
+	if len(edge)>2:
+		attribs = edge[2]
+
 	id0 = node_id(edge[0])
 	id1 = node_id(edge[1])
-	stream.write("\t%s -- %s;\n" % (id0, id1))
+
+	stream.write("\t")
+	stream.write("%s -- %s" % (id0, id1))
+	write_attributes(stream, attribs)
+	stream.write(";\n")
 
 def write_node(stream, node, index):
-	stream.write("\t%s [" % node_id(index))
-	stream.write("pos=\"%d,%d\"" % (node[0], node[1]))
-	stream.write("];\n")
+	attribs = {}
+	if len(node)>2:
+		attribs = node[2]
+	attribs['pos'] = "%d,%d" % (node[0], node[1])
+
+	stream.write("\t")
+	stream.write(node_id(index))
+	write_attributes(stream, attribs)
+	stream.write(";\n")
 
 def write_graph(stream, nodes, edges):
 	stream.write("graph {\n")
