@@ -5,8 +5,9 @@ This script creates random planar graphs, suitable as input to graphviz `neato`.
 Invocation
 ----------
 The simplest invocation is:
-
 > `python GenerateGraph.py outputgraph.gv`
+
+which you could then render with:
 > `neato -Tpng outputgraph.gv > outputgraph.png`
 
 Note that sometimes neato decides to pick a nonplanar embedding.
