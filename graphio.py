@@ -59,15 +59,23 @@ def write_node(stream, node, index):
 	write_attributes(stream, attribs)
 	stream.write(";\n")
 
-def write_graph(stream, nodes, edges):
+def write_graph_meta(stream, attribs):
+	if len(attribs)==0:
+		return
+	stream.write("\tgraph")
+	write_attributes(stream, attribs)
+	stream.write(";\n")
+
+def write_graph(stream, nodes, edges, attribs):
 	stream.write("graph {\n")
+	write_graph_meta(stream, attribs)
 	for i in range(len(nodes)):
 		write_node(stream, nodes[i], i)
 	for i in range(len(edges)):
 		write_edge(stream, edges[i], i)
 	stream.write("}\n")
 
-def write(filename, nodes, edges, seed):
+def write(filename, nodes, edges, seed, graph_attribs={}):
 	with open(filename, 'w') as f:
 		f.write("// random seed %d\n" % seed)
-		write_graph(f, nodes, edges)
+		write_graph(f, nodes, edges, graph_attribs)
