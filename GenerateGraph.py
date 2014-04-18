@@ -3,6 +3,10 @@ from random import Random
 import graphops 
 import graphio
 
+def default_seed():
+	import time, os
+	return int(time.time()) | os.getpid()
+
 def make_streams(seed):
 	# since triangulator is specialised and might need its own random stream
 	# may as well stream the other steps too!
@@ -41,7 +45,7 @@ def main(opts):
 
 if __name__=='__main__':
 	import argparse
-	import time, os
+
 	defaults = {
 		"width": 320,
 		"height": 240,
@@ -50,12 +54,13 @@ if __name__=='__main__':
 		"radius": 40,
 		"double": 0.1,
 		"hair": 0.0,
-		"seed": int(time.time()) | os.getpid(),
+		"seed": default_seed(),
 		"debug_trimode": 'conform',
 		"debug_tris": None,
 		"debug_span": None,
 	}
 
+	# argument types, for input-checking
 	def posint(string):
 		value = int(string)
 		if value <= 0:
@@ -74,6 +79,8 @@ if __name__=='__main__':
 			raise argparse.ArgumentTypeError("value in the range [0.0, 1.0] expected")
 		return value
 
+	# definition of argument structure
+
 	parser = argparse.ArgumentParser(
 		description="Create random planar graphs, suitable as input to graphviz neato.",
 		epilog="Note that sometimes neato decides to pick a nonplanar embedding.  Try giving neato the -n1 argument to use the node coordinates specified by this script, which are always planar but might not look as pretty."
@@ -90,10 +97,15 @@ if __name__=='__main__':
 	parser.add_argument("--debug-tris", metavar="FILENAME", type=str, required=False, help="If a filename is specified here, the initial triangular graph will be saved as a graph for inspection.")
 	parser.add_argument("--debug-span", metavar="FILENAME", type=str, required=False, help="If a filename is specified here, the spanning tree will be saved as a graph for inspection.")
 	parser.add_argument("filename", type=str, help="The graphviz output will be written to this file.")
+
+	# set defaults and parse!
 	parser.set_defaults(**defaults)
 	options = parser.parse_args()
 
+	# post-twiddling of arguments, and cross-checking
 	if options.edges is None:
 		options.edges = int(options.nodes * 1.25)
 	options.edges = max(options.edges, options.nodes-1) # necessary to avoid a disjoint graph
+
+	# run!
 	main(options)
