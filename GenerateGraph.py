@@ -36,12 +36,12 @@ def main(opts):
 	doubled_edges = graphops.double_up_edges(ext_edges, opts.double, streams['double'])
 
 	# write out to file
-	graphio.write(nodes, doubled_edges, opts.width, opts.height, opts.seed, opts.filename)
+	graphio.write(opts.filename, nodes, doubled_edges, opts.seed)
 	# write out debug traces if specified
 	if opts.debug_tris is not None:
-		graphio.write(nodes, tri_edges,     opts.width, opts.height, opts.seed, opts.debug_tris)
+		graphio.write(opts.debug_tris, nodes, tri_edges, opts.seed)
 	if opts.debug_span is not None:
-		graphio.write(nodes, span_edges,    opts.width, opts.height, opts.seed, opts.debug_span)
+		graphio.write(opts.debug_span, nodes, span_edges, opts.seed)
 
 if __name__=='__main__':
 	import argparse

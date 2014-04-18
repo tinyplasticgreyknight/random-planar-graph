@@ -11,17 +11,25 @@ def node_id(i):
 		i = int((i-c)/26)
 	return ident
 
-def write(nodes, edges, width, height, seed, filename):
+def write_edge(stream, edge, index):
+	id0 = node_id(edge[0])
+	id1 = node_id(edge[1])
+	stream.write("\t%s -- %s;\n" % (id0, id1))
+
+def write_node(stream, node, index):
+	stream.write("\t%s [" % node_id(index))
+	stream.write("pos=\"%d,%d\"" % (node[0], node[1]))
+	stream.write("];\n")
+
+def write_graph(stream, nodes, edges):
+	stream.write("graph {\n")
+	for i in range(len(nodes)):
+		write_node(stream, nodes[i], i)
+	for i in range(len(edges)):
+		write_edge(stream, edges[i], i)
+	stream.write("}\n")
+
+def write(filename, nodes, edges, seed):
 	with open(filename, 'w') as f:
 		f.write("// random seed %d\n" % seed)
-		f.write("graph {\n")
-		for i in range(len(nodes)):
-			node = nodes[i]
-			f.write("\t%s [" % node_id(i))
-			f.write("pos=\"%d,%d\"" % (node[0], node[1]))
-			f.write("];\n")
-		for edge in edges:
-			id0 = node_id(edge[0])
-			id1 = node_id(edge[1])
-			f.write("\t%s -- %s;\n" % (id0, id1))
-		f.write("}\n")
+		write_graph(f, nodes, edges)
