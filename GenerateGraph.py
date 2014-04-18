@@ -4,8 +4,14 @@ import graphops
 import graphio
 
 def default_seed():
-	import time, os
-	return int(time.time()) | os.getpid()
+	import os, struct
+	try:
+		# get very random 32-bit int from the operating system
+		return struct.unpack('I', os.urandom(4))[0]
+	except NotImplementedError:
+		# backup seed: this can be imperfect so we don't want it always
+		import time
+		return int(time.time()) | os.getpid()
 
 def make_streams(seed):
 	# since triangulator is specialised and might need its own random stream
