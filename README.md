@@ -1,30 +1,34 @@
-# Random Planar Graphs
-
+Random Planar Graphs
+====================
 This script creates random planar graphs, suitable as input to graphviz `neato`.
 
-## Invocation
+Invocation
+----------
 The simplest invocation is:
 
-> `python graphgen.py outputgraph.gv`
+> `python GenerateGraph.py outputgraph.gv`
 > `neato -Tpng outputgraph.gv > outputgraph.png`
 
 Note that sometimes neato decides to pick a nonplanar embedding.
 Try giving `neato` the `-n1` argument to use the node coordinates specified by this script, which are always planar but might not look as pretty.
 If you do, you might also want to specify `-Nshape=circle` to tell `neato` to use circular nodes.  The default coordinates assume nodes are roughly circular.
 
-## Options
+Options
+-------
 You can read the help text for details on options:
-> `python graphgen.py --help`
+> `python GenerateGraph.py --help`
 
 The most common options are:
-- `--width SIZE`: Width of the field on which to place points. `neato` might choose a different width for the output image.
-- `--height SIZE`: Height of the field on which to place points. As above, `neato` might choose a different size.
-- `--nodes NUM`: Number of nodes to place.
-- `--edges NUM`: Number of edges to use for connections. Double edges aren't counted.
-- `--radius SIZE`: Nodes will not be placed within this distance of each other. Default 40.
-- `--double CHANCE`: Probability of an edge being doubled. Ranges from 0.00 to 1.00. Default 0.10.
 
-## License
+* `--width SIZE`: Width of the field on which to place points. `neato` might choose a different width for the output image.
+* `--height SIZE`: Height of the field on which to place points. As above, `neato` might choose a different size.
+* `--nodes NUM`: Number of nodes to place.
+* `--edges NUM`: Number of edges to use for connections. Double edges aren't counted.
+* `--radius SIZE`: Nodes will not be placed within this distance of each other. Default 40.
+* `--double CHANCE`: Probability of an edge being doubled. Ranges from 0.00 to 1.00. Default 0.10.
+
+License
+-------
 Copyright (C) 2014 GreyKnight
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

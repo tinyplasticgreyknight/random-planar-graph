@@ -19,7 +19,7 @@ spotless: clean
 	-rm *.gv
 
 $(GRAPHDESC):
-	python graphgen.py $(GRAPHDESC) --width 640 --height 480 --nodes 26 --debug-span $(SPANDESC)
+	python GenerateGraph.py $(GRAPHDESC) --width 640 --height 480 --nodes 26 --debug-span $(SPANDESC)
 
 $(SPANDESC): $(GRAPHDESC)
 
