@@ -14,6 +14,9 @@ clean:
 
 spotless: clean
 	-rm *~
+	-rm *.pyc
+	-rm *.png
+	-rm *.gv
 
 $(GRAPHDESC):
 	python graphgen.py $(GRAPHDESC) --width 640 --height 480 --nodes 26 --debug-span $(SPANDESC)
