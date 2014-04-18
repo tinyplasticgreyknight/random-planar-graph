@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-
-import random
+from random import Random
 from DisjointSet import *
 import triangulation
 
-def generate_node(width, height):
-	return [random.randint(0, width-1), random.randint(0, height-1)]
+def generate_node(width, height, randstream):
+	return [randstream.randint(0, width-1), randstream.randint(0, height-1)]
 
 def distance2(node0, node1):
 	dx = node1[0] - node0[0]
@@ -19,10 +18,10 @@ def test_node_placement(proposed_node, nodes, exclusion_dist):
 			return False
 	return True
 
-def generate_nodes(n, width, height, exclusion_dist=1):
+def generate_nodes(n, width, height, exclusion_dist, randstream):
 	nodes = []
 	while len(nodes) < n:
-		proposed_node = generate_node(width, height)
+		proposed_node = generate_node(width, height, randstream)
 		if test_node_placement(proposed_node, nodes, exclusion_dist):
 			nodes.append(proposed_node)
 	return nodes
@@ -34,17 +33,18 @@ def triangle_edges(tri):
 	ac = [min(a, c), max(a, c)]
 	return [ab, bc, ac]
 
-def triangulate(nodes):
+def triangulate(nodes, randstream, tri_mode):
 	"""Return the list of edges which achieves a Delaunay triangulation of the specified nodes."""
-	triangles = triangulation.triangulate(nodes)
+	triangles = triangulation.triangulate(nodes, randstream, tri_mode)
 	edges = set()
-	for tri in triangles.vertices:
+	for tri in triangles:
 		for edge in triangle_edges(tri):
 			edges.add((edge[0], edge[1]))
 	return list(edges)
 
-def spanning_tree(num_nodes, edges):
+def spanning_tree(nodes, edges, randstream):
 	"""Given a list of edges, calculate a minimal spanning tree out of them."""
+	num_nodes = len(nodes)
 	tree = []
 	partitions = DisjointSet()
 	for i in range(num_nodes):
@@ -86,13 +86,13 @@ def partition_edges_by_nodes(nodes, edges):
 			distant.add(edge)
 	return (adjacent, distant)
 
-def choice(fromset):
-	return random.choice(list(fromset))
+def choice(fromset, stream):
+	return stream.choice(list(fromset))
 
-def chance(probability):
-	return (random.random() < probability)
+def chance(probability, stream):
+	return (stream.random() < probability)
 
-def extend_edges(starting_edges, target_size, selections, hair_adjustment):
+def extend_edges(starting_edges, target_size, selections, hair_adjustment, randstream):
 	"""
 	Returns a version of starting_edges with target_size unique elements.
 	Extra items are drawn from selections.
@@ -118,9 +118,9 @@ def extend_edges(starting_edges, target_size, selections, hair_adjustment):
 
 	extended = set(starting_edges)
 	while len(extended) < target_size:
-		edge = choice(selections)
-		if (edge in bad_hair_edges) and chance(hair_adjustment):
-			edge = choice(good_hair_edges)
+		edge = choice(selections, randstream)
+		if (edge in bad_hair_edges) and chance(hair_adjustment, randstream):
+			edge = choice(good_hair_edges, randstream)
 			good_hair_edges.discard(edge)
 		else:
 			selections.discard(edge)
@@ -155,21 +155,48 @@ def write_graph(nodes, edges, width, height, seed, filename):
 			f.write("\t%s -- %s;\n" % (id0, id1))
 		f.write("}\n")
 
+def make_streams(seed):
+	# since triangulator is specialised and might need its own random stream
+	# may as well stream the other steps too!
+	streams = {}
+	i=0
+	for k in ['gen', 'tri', 'span', 'ext', 'double']:
+		streams[k] = Random(seed+i)
+		i += 1
+	return streams
 
-def main(filename, width, height, num_nodes, num_edges, exclusion_radius, double_chance, hair_adjustment, seed):
-	random.seed(seed)
-	nodes = generate_nodes(num_nodes, width, height, exclusion_radius)
-	tri_edges = triangulate(nodes)
-	span_edges = spanning_tree(len(nodes), tri_edges)
-	ext_edges = extend_edges(span_edges, num_edges, tri_edges, hair_adjustment)
+def double_up_edges(edges, probability, randstream):
 	double_edges = []
-	for edge in ext_edges:
-		if chance(double_chance):
+	for edge in edges:
+		if chance(probability, randstream):
 			double_edges.append(edge)
-	edges = ext_edges + double_edges
+	return (edges + double_edges)
 
-	write_graph(nodes, span_edges, width, height, seed, "span.gv")
-	write_graph(nodes, edges, width, height, seed, filename)
+def main(opts):
+	num_nodes = opts.nodes
+	num_edges = opts.edges
+	streams = make_streams(opts.seed)
+
+	# first generate some points in the plane, according to our constraints
+	nodes = generate_nodes(num_nodes, opts.width, opts.height, opts.radius, streams['gen'])
+	num_nodes = len(nodes)
+	# find a delaunay triangulation, so we have a list of edges that will give planar graphs
+	tri_edges = triangulate(nodes, streams['tri'], opts.debug_trimode)
+	# compute a spanning tree to ensure the graph is joined
+	span_edges = spanning_tree(nodes, tri_edges, streams['span'])
+	# extend the tree with some more edges to achieve our target num_edges
+	# pick the extra ones from tri_edges to preserve planarity
+	ext_edges = extend_edges(span_edges, num_edges, tri_edges, opts.hair, streams['ext'])
+	# randomly double some edges
+	doubled_edges = double_up_edges(ext_edges, opts.double, streams['double'])
+
+	# write out to file
+	write_graph(nodes, doubled_edges, opts.width, opts.height, opts.seed, opts.filename)
+	# write out debug traces if specified
+	if opts.debug_tris is not None:
+		write_graph(nodes, tri_edges,     opts.width, opts.height, opts.seed, opts.debug_tris)
+	if opts.debug_span is not None:
+		write_graph(nodes, span_edges,    opts.width, opts.height, opts.seed, opts.debug_span)
 
 if __name__=='__main__':
 	import argparse
@@ -183,25 +210,49 @@ if __name__=='__main__':
 		"double": 0.1,
 		"hair": 0.0,
 		"seed": int(time.time()) | os.getpid(),
+		"debug_trimode": 'conform',
+		"debug_tris": None,
+		"debug_span": None,
 	}
+
+	def posint(string):
+		value = int(string)
+		if value <= 0:
+			raise argparse.ArgumentTypeError("positive value expected")
+		return value
+
+	def nonnegative_int(string):
+		value = int(string)
+		if value < 0:
+			raise argparse.ArgumentTypeError("non-negative value expected")
+		return value
+
+	def probability(string):
+		value = float(string)
+		if value < 0.0 or value > 1.0:
+			raise argparse.ArgumentTypeError("value in the range [0.0, 1.0] expected")
+		return value
+
 	parser = argparse.ArgumentParser(
 		description="Create random planar graphs, suitable as input to graphviz neato.",
 		epilog="Note that sometimes neato decides to pick a nonplanar embedding.  Try giving neato the -n1 argument to use the node coordinates specified by this script, which are always planar but might not look as pretty."
 	)
-	parser.add_argument("--width", type=int, required=False, help="Width of the field on which to place points.  neato might choose a different width for the output image.")
-	parser.add_argument("--height", type=int, required=False, help="Height of the field on which to place points.  As above, neato might choose a different size.")
-	parser.add_argument("--nodes", type=int, required=False, help="Number of nodes to place.")
-	parser.add_argument("--edges", type=int, required=False, help="Number of edges to use for connections.  Double edges aren't counted.")
-	parser.add_argument("--radius", type=int, required=False, help="Nodes will not be placed within this distance of each other.  Default %d." % defaults["radius"])
-	parser.add_argument("--double", type=float, required=False, help="Probability of an edge being doubled.  Ranges from 0.00 to 1.00.  Default %.2f." % defaults["double"])
-	parser.add_argument("--hair", type=float, required=False, help="Adjustment factor to favour dead-end nodes.  Ranges from 0.00 (least hairy) to 1.00 (most hairy).  Some dead-ends may exist even with a low hair factor.  Default %.2f." % defaults["hair"])
-	parser.add_argument("--seed", type=int, required=False, help="Seed for the random number generator.  You can check the output file to see what seed was used.")
+	parser.add_argument("--width", metavar="SIZE", type=posint, required=False, help="Width of the field on which to place points.  neato might choose a different width for the output image.")
+	parser.add_argument("--height", metavar="SIZE", type=posint, required=False, help="Height of the field on which to place points.  As above, neato might choose a different size.")
+	parser.add_argument("--nodes", metavar="NUM", type=posint, required=False, help="Number of nodes to place.")
+	parser.add_argument("--edges", metavar="NUM", type=posint, required=False, help="Number of edges to use for connections.  Double edges aren't counted.")
+	parser.add_argument("--radius", metavar="SIZE", type=nonnegative_int, required=False, help="Nodes will not be placed within this distance of each other.  Default %d." % defaults["radius"])
+	parser.add_argument("--double", metavar="CHANCE", type=probability, required=False, help="Probability of an edge being doubled.  Ranges from 0.00 to 1.00.  Default %.2f." % defaults["double"])
+	parser.add_argument("--hair", metavar="AMOUNT", type=probability, required=False, help="Adjustment factor to favour dead-end nodes.  Ranges from 0.00 (least hairy) to 1.00 (most hairy).  Some dead-ends may exist even with a low hair factor.  Default %.2f." % defaults["hair"])
+	parser.add_argument("--seed", metavar="NUMBER", type=int, required=False, help="Seed for the random number generator.  You can check the output file to see what seed was used.")
+	parser.add_argument("--debug-trimode", type=str, choices=['pyhull', 'triangle', 'conform'], required=False, help="Triangulation mode to generate the initial triangular graph.  Default is conform.")
+	parser.add_argument("--debug-tris", metavar="FILENAME", type=str, required=False, help="If a filename is specified here, the initial triangular graph will be saved as a graph for inspection.")
+	parser.add_argument("--debug-span", metavar="FILENAME", type=str, required=False, help="If a filename is specified here, the spanning tree will be saved as a graph for inspection.")
 	parser.add_argument("filename", type=str, help="The graphviz output will be written to this file.")
 	parser.set_defaults(**defaults)
 	options = parser.parse_args()
 
-	num_edges = options.edges
-	if num_edges is None:
-		num_edges = int(options.nodes * 1.25)
-	num_edges = max(num_edges, options.nodes-1) # necessary to avoid a disjoint graph
-	main(options.filename, options.width, options.height, options.nodes, num_edges, options.radius, options.double, options.hair, options.seed)
+	if options.edges is None:
+		options.edges = int(options.nodes * 1.25)
+	options.edges = max(options.edges, options.nodes-1) # necessary to avoid a disjoint graph
+	main(options)
